@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Cliente {
+  id          Int         @id @default(autoincrement())
+  nome        String
+  email       String      @unique
+  telefone    String      @unique  // Adicionando @unique aqui
+  cpf         String?     @unique  // Opcional, pode ser CPF ou CNPJ
+  cnpj        String?     @unique  // Opcional, pode ser CPF ou CNPJ
+  enderecos   Endereco[]
+  servicos    Servico[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Profissional {
+  id            Int         @id @default(autoincrement())
+  nome          String
+  email         String      @unique
+  telefone      String      @unique
+  cpf           String?     @unique  // Opcional, pode ser CPF ou CNPJ
+  cnpj          String?     @unique  // Opcional, pode ser CPF ou CNPJ
+  tipoServicoId Int
+  tipoServico   TipoServico  @relation(fields: [tipoServicoId], references: [id])
+  orcamentos    Orcamento[]
+  servicos      Servico[]   // Serviços onde o profissional foi escolhido
+  active        Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model TipoServico {
+  id            Int           @id @default(autoincrement())
+  nome          String        @unique
+  descricao     String?
+  servicos      Servico[]
+  profissionais Profissional[]
+  active        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Servico {
+  id                 Int           @id @default(autoincrement())
+  descricao         String
+  tipoServicoId     Int
+  tipoServico       TipoServico   @relation(fields: [tipoServicoId], references: [id])
+  status            String        // PENDENTE, ORCAMENTOS_RECEBIDOS, AGENDADO, EM_ANDAMENTO, CONCLUIDO, CANCELADO
+  dataAgendada      DateTime?
+  clienteId         Int
+  cliente           Cliente       @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  orcamentos        Orcamento[]
+  orcamentoEscolhidoId Int?      @unique
+  orcamentoEscolhido   Orcamento? @relation("OrcamentoEscolhido", fields: [orcamentoEscolhidoId], references: [id], onDelete: SetNull)
+  profissionalId    Int?
+  profissional      Profissional? @relation(fields: [profissionalId], references: [id], onDelete: SetNull)
+  
+  // Campos comuns
+  telefone          String
+  nome              String
+  email             String
+  cep               String
+  logradouro        String
+  complemento       String?
+  numero            String
+  bairro            String
+  cidade            String
+  estado            String
+  foto              String?
+
+  // Campos específicos para Faxineira
+  tamanhoImovel     String?
+  tipoLimpeza       String?
+  frequencia        String?
+  horario           String?
+  extras            String?
+
+  // Campos específicos para Pintor
+  tipoImovel        String?
+  superficie        String?
+  condicao          String?
+  prazo             String?
+
+  // Campos específicos para Eletricista
+  tipoServicoEletrico String?
+  descricaoProblema   String?
+
+  // Campos específicos para Montador de Móveis
+  descricaoMoveis     String?
+  quantidadeMoveis    Int?
+
+  // Campos específicos para Pedreiro
+  descricaoServicoPedreiro String?
+  areaMetragem           String?
+
+  // Campos específicos para Freteiro
+  descricaoItens         String?
+  origemDestino          String?
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+model Orcamento {
+  id              Int         @id @default(autoincrement())
+  valor           Float
+  descricao       String      // Descrição detalhada do orçamento
+  status          String      // PENDENTE, APROVADO, REJEITADO
+  servicoId       Int
+  servico         Servico     @relation(fields: [servicoId], references: [id], onDelete: Cascade)
+  servicoEscolhido Servico?   @relation("OrcamentoEscolhido")
+  profissionalId  Int
+  profissional    Profissional @relation(fields: [profissionalId], references: [id], onDelete: Cascade)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model Endereco {
+  id          Int       @id @default(autoincrement())
+  rua         String
+  numero      String
+  complemento String?
+  bairro      String
+  cidade      String
+  estado      String
+  cep         String
+  clienteId   Int
+  cliente     Cliente   @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Admin {
+  id        Int       @id @default(autoincrement())
+  nome      String
+  email     String    @unique
+  senha     String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Otp {
+  id        Int      @id @default(autoincrement())
+  telefone  String
+  codigo    String
+  expires   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([telefone])
+}

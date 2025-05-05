@@ -1,0 +1,37 @@
+{
+  "titulo": "Eletricista Profissional - Serviços Residenciais e Comerciais",
+  "descricao": "Eletricista profissional com mais de 10 anos de experiência, oferecendo serviços de qualidade e garantia. Atendimento rápido e eficiente.",
+  "servicos": [
+    "Instalação elétrica residencial",
+    "Manutenção preventiva",
+    "Reparo de circuitos",
+    "Instalação de chuveiros elétricos",
+    "Troca de tomadas e interruptores",
+    "Instalação de luminárias",
+    "Projetos elétricos"
+  ],
+  "localizacao": {
+    "cidade": "São Paulo",
+    "bairro": "Centro",
+    "estado": "SP"
+  },
+  "contato": {
+    "telefone": "(11) 99999-9999",
+    "email": "eletricista@exemplo.com",
+    "whatsapp": "(11) 99999-9999"
+  },
+  "horarioAtendimento": {
+    "dias": ["Segunda a Sexta", "Sábado"],
+    "horario": "08:00 às 18:00"
+  },
+  "preco": {
+    "visitaTecnica": 80.0,
+    "horaTrabalho": 60.0
+  },
+  "certificacoes": ["NR10", "CREA", "Curso Técnico em Elétrica"],
+  "garantia": "90 dias",
+  "avaliacoes": {
+    "media": 4.8,
+    "totalAvaliacoes": 150
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "titulo": "Instalação Elétrica Residencial",
+  "descricao": "Necessito de um eletricista para realizar a instalação elétrica completa em minha residência nova.",
+  "tipoServicoId": 3,
+  "status": "PENDENTE",
+  "clienteId": 1,
+  "telefone": "(11) 99999-9999",
+  "nome": "João Silva",
+  "email": "joao.silva@exemplo.com",
+  "cep": "01310-100",
+  "logradouro": "Avenida Paulista",
+  "endereco": "Avenida Paulista, 1000",
+  "complemento": "Apto 101",
+  "numero": "1000",
+  "bairro": "Bela Vista",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "tipoServicoEletrico": "INSTALACAO_COMPLETA",
+  "descricaoProblema": "Preciso de instalação elétrica completa em apartamento novo, incluindo tomadas, interruptores e iluminação em todos os cômodos."
+}
