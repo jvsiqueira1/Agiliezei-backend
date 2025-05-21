@@ -1,7 +1,7 @@
-const prisma = require("../config/prisma");
-const { formatarTelefone } = require("../helpers/Utils");
-const whatsappClient = require("../helpers/WhatsappClient");
-const tokenService = require("./TokenService");
+const prisma = require('../config/prisma');
+const { formatarTelefone } = require('../helpers/Utils');
+const whatsappClient = require('../helpers/WhatsappClient');
+const tokenService = require('./TokenService');
 
 class OtpService {
   gerarCodigo() {
@@ -40,28 +40,35 @@ class OtpService {
       },
     });
 
-    console.log("Teste OTP:", otp);
+    console.log('Teste OTP:', otp);
 
     if (!otp) {
-      throw new Error("Código inválido ou expirado");
+      throw new Error('Código inválido ou expirado');
     }
 
     // Buscar o usuário pelo telefone
-    const usuario = await prisma.cliente.findFirst({
-      where: {
-        telefone,
-      },
+    let usuario = await prisma.cliente.findFirst({
+      where: { telefone },
     });
 
+    let tipo = 'cliente';
+
     if (!usuario) {
-      throw new Error("Usuário não encontrado");
+      usuario = await prisma.profissional.findFirst({
+        where: { telefone },
+      });
+      tipo = 'parceiro';
+    }
+
+    if (!usuario) {
+      throw new Error('Usuário não encontrado');
     }
 
     // Gerar token JWT
     const token = tokenService.gerarToken({
       id: usuario.id,
       telefone: usuario.telefone,
-      tipo: usuario.tipo,
+      tipo,
     });
 
     // Deletar o código OTP após uso

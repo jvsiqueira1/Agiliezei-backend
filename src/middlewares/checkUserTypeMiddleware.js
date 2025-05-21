@@ -5,7 +5,7 @@ const checkUserTypeMiddleware = (allowedTypes) => {
 
       if (!allowedTypes.includes(tipo)) {
         return res.status(403).json({
-          error: "Acesso negado. Tipo de usuário não autorizado.",
+          error: 'Acesso negado. Tipo de usuário não autorizado.',
         });
       }
 
@@ -13,7 +13,7 @@ const checkUserTypeMiddleware = (allowedTypes) => {
     } catch (error) {
       return res
         .status(500)
-        .json({ error: "Erro ao verificar tipo de usuário" });
+        .json({ error: 'Erro ao verificar tipo de usuário' });
     }
   };
 };

@@ -40,6 +40,9 @@ model Profissional {
   active        Boolean     @default(true)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  dataNascimento DateTime?
+  endereco       String?
+  foto_documento String?
 }
 
 model TipoServico {
@@ -116,13 +119,17 @@ model Servico {
 
 model Orcamento {
   id              Int         @id @default(autoincrement())
-  valor           Float
+  valor           Float?      // Valor pode ser opcional, devido a logica de visita tecnica
   descricao       String      // Descrição detalhada do orçamento
   status          String      // PENDENTE, APROVADO, REJEITADO
   servicoId       Int
   servico         Servico     @relation(fields: [servicoId], references: [id], onDelete: Cascade)
   servicoEscolhido Servico?   @relation("OrcamentoEscolhido")
   profissionalId  Int
+  precisaVisitaTecnica Boolean  @default(false) 
+  dataVisitaTecnica    DateTime? 
+  visitaTecnicaConfirmada Boolean? @default(false)
+  visitaTecnicaRealizada Boolean @default(false)                 
   profissional    Profissional @relation(fields: [profissionalId], references: [id], onDelete: Cascade)
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -161,4 +168,12 @@ model Otp {
   updatedAt DateTime @updatedAt
 
   @@index([telefone])
+}
+
+model ContatoOutrosServicos {
+  id          Int      @id @default(autoincrement())
+  telefone    String
+  tipoServico String
+  descricao   String
+  createdAt   DateTime @default(now())
 }

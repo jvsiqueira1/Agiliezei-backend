@@ -1,4 +1,4 @@
 const formatarTelefone = (telefone) => {
-    return "55" + telefone.replace(/\D/g, "");
+  return '55' + telefone.replace(/\D/g, '');
 };
 module.exports = { formatarTelefone };

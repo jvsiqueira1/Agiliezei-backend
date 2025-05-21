@@ -1,7 +1,7 @@
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || "sua_chave_secreta_aqui";
-const JWT_EXPIRES_IN = "24h";
+const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta_aqui';
+const JWT_EXPIRES_IN = '24h';
 
 class TokenService {
   gerarToken(payload) {
@@ -12,7 +12,7 @@ class TokenService {
     try {
       return jwt.verify(token, JWT_SECRET);
     } catch (error) {
-      throw new Error("Token inválido ou expirado");
+      throw new Error('Token inválido ou expirado');
     }
   }
 }

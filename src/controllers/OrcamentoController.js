@@ -1,13 +1,24 @@
-const OrcamentoService = require("../services/OrcamentoService");
+const prisma = require('../config/prisma');
+const OrcamentoService = require('../services/OrcamentoService');
+
+function determinarNovoStatus(data) {
+  if (data.precisaVisitaTecnica) {
+    return 'AGUARDANDO_VISITA_TECNICA';
+  }
+  return 'AGUARDANDO_ESCOLHA_ORCAMENTO';
+}
 
 class OrcamentoController {
   async criar(req, res) {
     try {
-      const orcamento = await OrcamentoService.criar(req.body);
-      res.status(201).json(orcamento);
+      const data = req.body;
+
+      data.status = determinarNovoStatus(data);
+
+      const orcamento = await OrcamentoService.criar(data);
+      return res.status(201).json(orcamento);
     } catch (error) {
-      console.error(error);
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   }
 
@@ -26,7 +37,7 @@ class OrcamentoController {
       const orcamento = await OrcamentoService.buscarPorId(id);
 
       if (!orcamento) {
-        return res.status(404).json({ error: "Orçamento não encontrado" });
+        return res.status(404).json({ error: 'Orçamento não encontrado' });
       }
 
       res.json(orcamento);
@@ -48,9 +59,8 @@ class OrcamentoController {
   async listarPorProfissional(req, res) {
     try {
       const profissionalId = parseInt(req.params.profissionalId);
-      const orcamentos = await OrcamentoService.listarPorProfissional(
-        profissionalId
-      );
+      const orcamentos =
+        await OrcamentoService.listarPorProfissional(profissionalId);
       res.json(orcamentos);
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -60,10 +70,37 @@ class OrcamentoController {
   async atualizar(req, res) {
     try {
       const id = parseInt(req.params.id);
-      const orcamento = await OrcamentoService.atualizar(id, req.body);
-      res.json(orcamento);
+      const { valor, descricao } = req.body;
+
+      if (typeof valor !== 'number' || isNaN(valor)) {
+        return res
+          .status(400)
+          .json({
+            error: 'O valor deve ser um número válido e não pode ser nulo.',
+          });
+      }
+
+      if (typeof descricao !== 'string' || descricao.trim() === '') {
+        return res.status(400).json({ error: 'Descrição inválida.' });
+      }
+
+      const orcamentoAtual = await OrcamentoService.buscarPorId(id);
+      if (!orcamentoAtual) {
+        return res.status(404).json({ error: 'Orçamento não encontrado.' });
+      }
+
+      // Decide o novo status aqui, e passa para o service
+      const novoStatus = determinarNovoStatus(orcamentoAtual);
+
+      const orcamentoAtualizado = await OrcamentoService.atualizar(id, {
+        valor,
+        descricao,
+        status: novoStatus,
+      });
+
+      return res.json(orcamentoAtualizado);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   }
 
@@ -84,7 +121,7 @@ class OrcamentoController {
       await OrcamentoService.deletar(id);
       return res
         .status(200)
-        .json(ApiOutputs.success("Cliente deletado com sucesso"));
+        .json(ApiOutputs.success('Cliente deletado com sucesso'));
     } catch (error) {
       res.status(400).json({ error: error.message });
     }

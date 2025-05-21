@@ -1,5 +1,5 @@
 class ApiOutputs {
-  static success(data, message = "Operação realizada com sucesso") {
+  static success(data, message = 'Operação realizada com sucesso') {
     return {
       success: true,
       message,
@@ -7,7 +7,7 @@ class ApiOutputs {
     };
   }
 
-  static created(data, message = "Registro criado com sucesso") {
+  static created(data, message = 'Registro criado com sucesso') {
     return {
       success: true,
       message,
@@ -15,7 +15,7 @@ class ApiOutputs {
     };
   }
 
-  static error(message = "Erro ao processar a requisição", errors = null) {
+  static error(message = 'Erro ao processar a requisição', errors = null) {
     return {
       success: false,
       message,
@@ -23,14 +23,14 @@ class ApiOutputs {
     };
   }
 
-  static notFound(message = "Registro não encontrado") {
+  static notFound(message = 'Registro não encontrado') {
     return {
       success: false,
       message,
     };
   }
 
-  static badRequest(message = "Requisição inválida", errors = null) {
+  static badRequest(message = 'Requisição inválida', errors = null) {
     return {
       success: false,
       message,
@@ -38,7 +38,7 @@ class ApiOutputs {
     };
   }
 
-  static unauthorized(message = "Não autorizado") {
+  static unauthorized(message = 'Não autorizado') {
     return {
       success: false,
       message,

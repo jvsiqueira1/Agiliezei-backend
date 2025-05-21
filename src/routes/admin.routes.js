@@ -1,40 +1,40 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const AdminController = require("../controllers/AdminController");
-const authMiddleware = require("../middlewares/authMiddleware");
-const checkUserTypeMiddleware = require("../middlewares/checkUserTypeMiddleware");
+const AdminController = require('../controllers/AdminController');
+const authMiddleware = require('../middlewares/authMiddleware');
+const checkUserTypeMiddleware = require('../middlewares/checkUserTypeMiddleware');
 
-router.post("/login", AdminController.login)
+router.post('/login', AdminController.login);
 
 router.post(
-  "/",
+  '/',
   authMiddleware,
-  checkUserTypeMiddleware(["admin"]),
-  AdminController.criar
+  checkUserTypeMiddleware(['admin']),
+  AdminController.criar,
 );
 router.get(
-  "/",
+  '/',
   authMiddleware,
-  checkUserTypeMiddleware(["admin"]),
-  AdminController.listarTodos
+  checkUserTypeMiddleware(['admin']),
+  AdminController.listarTodos,
 );
 router.get(
-  "/:id",
+  '/:id',
   authMiddleware,
-  checkUserTypeMiddleware(["admin"]),
-  AdminController.buscarPorId
+  checkUserTypeMiddleware(['admin']),
+  AdminController.buscarPorId,
 );
 router.put(
-  "/:id",
+  '/:id',
   authMiddleware,
-  checkUserTypeMiddleware(["admin"]),
-  AdminController.atualizar
+  checkUserTypeMiddleware(['admin']),
+  AdminController.atualizar,
 );
 router.delete(
-  "/:id",
+  '/:id',
   authMiddleware,
-  checkUserTypeMiddleware(["admin"]),
-  AdminController.deletar
+  checkUserTypeMiddleware(['admin']),
+  AdminController.deletar,
 );
 
 module.exports = router;

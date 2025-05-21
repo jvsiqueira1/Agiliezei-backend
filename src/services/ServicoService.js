@@ -1,28 +1,31 @@
-const prisma = require("../config/prisma");
+const prisma = require('../config/prisma');
+const upload = require('../helpers/upload');
+const WhatsappClient = require('../helpers/WhatsappClient');
 
 class ServicoService {
   async criar(data) {
-    console.log("criar-service-back:", data);
+    console.log('criar-service-back:', data);
 
     const cliente = await prisma.cliente.findUnique({
-      where: { telefone: data.telefone.replace(/\D/g, "") },
+      where: { telefone: data.telefone.replace(/\D/g, '') },
     });
 
-    // Validar campos específicos baseado no tipo de serviço
     const tipoServico = await prisma.tipoServico.findUnique({
       where: { nome: data.servico },
     });
 
     if (!tipoServico) {
-      throw new Error("Tipo de serviço não encontrado");
+      throw new Error('Tipo de serviço não encontrado');
     }
 
     // Criar objeto de serviço para o Prisma
     const servicoData = {
       descricao: data.descricao,
       tipoServicoId: tipoServico.id,
-      status: "PENDENTE",
-      dataAgendada: data.dataAgendada ? new Date(data.dataAgendada) : null,
+      status: 'PENDENTE',
+      dataAgendada: data.dataAgendada
+        ? new Date(data.dataAgendada.split('/').reverse().join('-'))
+        : null,
       clienteId: cliente.id,
       telefone: data.telefone,
       nome: data.nome,
@@ -39,32 +42,34 @@ class ServicoService {
 
     // Adicionar campos específicos baseado no tipo de serviço
     switch (tipoServico.nome) {
-      case "Eletricista":
+      case 'Eletricista':
         servicoData.tipoServicoEletrico = data.tipoServicoEletrico;
         servicoData.descricaoProblema = data.descricaoProblema;
         break;
-      case "Faxineira":
+      case 'Faxineira':
         servicoData.tamanhoImovel = data.tamanhoImovel;
         servicoData.tipoLimpeza = data.tipoLimpeza;
         servicoData.frequencia = data.frequencia;
         servicoData.horario = data.horario;
         servicoData.extras = data.extras;
         break;
-      case "Pintor":
+      case 'Pintor':
         servicoData.tipoImovel = data.tipoImovel;
         servicoData.superficie = data.superficie;
         servicoData.condicao = data.condicao;
         servicoData.prazo = data.prazo;
         break;
-      case "Montador de Móveis":
+      case 'Montador de Móveis':
         servicoData.descricaoMoveis = data.descricaoMoveis;
-        servicoData.quantidadeMoveis = data.quantidadeMoveis;
+        servicoData.quantidadeMoveis = parseInt(data.quantidadeMoveis, 10);
         break;
-      case "Pedreiro":
+      case 'Pedreiro':
+        // Adicionar apenas campos relevantes para o "Pedreiro"
         servicoData.descricaoServicoPedreiro = data.descricaoServicoPedreiro;
         servicoData.areaMetragem = data.areaMetragem;
         break;
-      case "Freteiro":
+      case 'Freteiro':
+        // Adicionar apenas campos relevantes para o "Freteiro"
         servicoData.descricaoItens = data.descricaoItens;
         servicoData.origemDestino = data.origemDestino;
         break;
@@ -72,16 +77,16 @@ class ServicoService {
 
     // Validar campos obrigatórios
     const camposObrigatorios = [
-      "telefone",
-      "nome",
-      "email",
-      "cep",
-      "logradouro",
-      "dataAgendada",
-      "numero",
-      "bairro",
-      "cidade",
-      "estado",
+      'telefone',
+      'nome',
+      'email',
+      'cep',
+      'logradouro',
+      'dataAgendada',
+      'numero',
+      'bairro',
+      'cidade',
+      'estado',
     ];
 
     for (const campo of camposObrigatorios) {
@@ -91,23 +96,66 @@ class ServicoService {
     }
 
     // Criar o serviço no banco de dados
-    return prisma.servico.create({
+    const servico = prisma.servico.create({
       data: servicoData,
       include: {
         cliente: true,
         tipoServico: true,
       },
     });
+
+    const profissionais = await prisma.profissional.findMany({
+      where: {
+        tipoServicoId: tipoServico.id,
+      },
+    });
+
+    for (const profissional of profissionais) {
+      const mensagem = `Olá, ${profissional.nome}!\nUm novo serviço de ${tipoServico.nome} foi criado. Acesse agilizei.net para mais detalhes`;
+      try {
+        await WhatsappClient.enviarMensagem(profissional.telefone, mensagem);
+      } catch (error) {
+        console.error(
+          `Erro ao enviar mensagem para ${profissional.nome} (${profissional.telefone}):`,
+          error.message,
+        );
+      }
+    }
+
+    return servico;
   }
 
-  async listarTodos() {
-    return prisma.servico.findMany({
+  async listarTodos({ page = 1, limit = 10, tipoServicoId }) {
+    const skip = (page - 1) * limit;
+
+    const where = {};
+    if (tipoServicoId) {
+      where.tipoServicoId = Number(tipoServicoId);
+    }
+
+    const totalCount = await prisma.servico.count({ where });
+
+    const servicos = await prisma.servico.findMany({
+      where,
       include: {
         cliente: true,
         profissional: true,
-        orcamentos: true,
+        tipoServico: true,
+      },
+      skip,
+      take: Number(limit),
+      orderBy: {
+        createdAt: 'desc',
       },
     });
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      servicos,
+      totalCount,
+      totalPages,
+    };
   }
 
   async buscarPorId(id) {
@@ -119,7 +167,7 @@ class ServicoService {
             enderecos: true,
           },
         },
-        profissional: true,
+        tipoServico: true, // Inclui o tipo de serviço
         orcamentos: true,
         orcamentoEscolhido: true,
       },
@@ -132,8 +180,17 @@ class ServicoService {
         clienteId,
       },
       include: {
-        orcamentos: true,
+        orcamentos: {
+          include: {
+            profissional: {
+              select: {
+                nome: true,
+              },
+            },
+          },
+        },
         profissional: true,
+        tipoServico: true, // Inclui o tipo de serviço para uso posterior
       },
     });
   }
@@ -150,13 +207,14 @@ class ServicoService {
     });
   }
 
-  async listarPorTipoServico(tipoServico) {
+  async listarPorTipoServico(tipoServicoId) {
     return prisma.servico.findMany({
       where: {
-        tipoServico,
+        tipoServicoId: tipoServicoId,
       },
       include: {
         cliente: true,
+        orcamentos: true,
       },
     });
   }
@@ -196,50 +254,101 @@ class ServicoService {
   }
 
   async escolherOrcamento(servicoId, orcamentoId) {
-    const orcamento = await prisma.orcamento.findUnique({
-      where: { id: orcamentoId },
-      include: { profissional: true },
+    return await prisma.$transaction(async (prisma) => {
+      const orcamento = await prisma.orcamento.findUnique({
+        where: { id: orcamentoId },
+        include: { profissional: true },
+      });
+
+      if (!orcamento) {
+        throw new Error('Orçamento não encontrado');
+      }
+
+      // Atualiza o status do orçamento escolhido para APROVADO
+      await prisma.orcamento.update({
+        where: { id: orcamentoId },
+        data: { status: 'APROVADO' },
+      });
+
+      // Atualiza os outros orçamentos para REJEITADO
+      await prisma.orcamento.updateMany({
+        where: {
+          servicoId: servicoId,
+          id: { not: orcamentoId },
+        },
+        data: { status: 'REJEITADO' },
+      });
+
+      // Atualiza o serviço com o orçamento escolhido e o profissional
+      const servicoAtualizado = await prisma.servico.update({
+        where: { id: servicoId },
+        data: {
+          status: 'AGENDADO',
+          orcamentoEscolhidoId: orcamentoId,
+          profissionalId: orcamento.profissionalId,
+        },
+        include: {
+          orcamentoEscolhido: true,
+          profissional: true,
+          cliente: {
+            include: {
+              enderecos: true,
+            },
+          },
+        },
+      });
+
+      return servicoAtualizado;
     });
+  }
 
-    if (!orcamento) {
-      throw new Error("Orçamento não encontrado");
-    }
-
-    // Atualiza o serviço com o orçamento escolhido e o profissional
-    const servicoAtualizado = await prisma.servico.update({
-      where: { id: servicoId },
+  async confirmarVisitaParceiro(orcamentoId) {
+    const orcamentoAtualizado = await prisma.orcamento.update({
+      where: { id: orcamentoId },
       data: {
-        status: "AGENDADO",
-        orcamentoEscolhidoId: orcamentoId,
-        profissionalId: orcamento.profissionalId,
+        status: 'VISITA_TECNICA_REALIZADA',
+        visitaTecnicaRealizada: true,
+        precisaVisitaTecnica: false,
+      },
+    });
+    return orcamentoAtualizado;
+  }
+
+  async confirmarVisitaCliente(orcamentoId) {
+    const orcamentoAtualizado = await prisma.orcamento.update({
+      where: { id: orcamentoId },
+      data: {
+        status: 'VISITA_TECNICA_CONFIRMADA',
+        visitaTecnicaConfirmada: true,
       },
       include: {
-        orcamentoEscolhido: true,
         profissional: true,
-        cliente: {
+        servico: {
           include: {
-            enderecos: true,
+            cliente: true,
           },
         },
       },
     });
 
-    // Atualiza o status do orçamento escolhido para APROVADO
-    await prisma.orcamento.update({
-      where: { id: orcamentoId },
-      data: { status: "APROVADO" },
-    });
+    const nomeProfissional =
+      orcamentoAtualizado.profissional?.nome || 'Parceiro';
+    const telefoneProfissional = orcamentoAtualizado.profissional?.telefone;
 
-    // Atualiza os outros orçamentos para REJEITADO
-    await prisma.orcamento.updateMany({
-      where: {
-        servicoId: servicoId,
-        id: { not: orcamentoId },
-      },
-      data: { status: "REJEITADO" },
-    });
+    if (telefoneProfissional) {
+      const mensagem = `Olá, ${nomeProfissional}!\nO cliente confirmou a visita técnica para o serviço. Favor preparar-se para o atendimento.`;
 
-    return servicoAtualizado;
+      try {
+        await WhatsappClient.enviarMensagem(telefoneProfissional, mensagem);
+        console.log(
+          `Mensagem enviada ao parceiro com sucesso. telefone: ${telefoneProfissional}, mensagem: ${mensagem}`,
+        );
+      } catch (error) {
+        console.error('Erro ao enviar mensagem para parceiro: ', error);
+      }
+    }
+
+    return orcamentoAtualizado;
   }
 
   async deletar(id) {

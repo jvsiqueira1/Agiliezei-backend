@@ -1,11 +1,13 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const ProfissionalController = require("../controllers/ProfissionalController");
+const ProfissionalController = require('../controllers/ProfissionalController');
+const upload = require('../helpers/upload');
 
-router.post("/", ProfissionalController.criar);
-router.get("/", ProfissionalController.listarTodos);
-router.get("/:id", ProfissionalController.buscarPorId);
-router.put("/:id", ProfissionalController.atualizar);
-router.delete("/:id", ProfissionalController.deletar);
+router.post('/', upload.single('foto_documento'), ProfissionalController.criar);
+router.get('/', ProfissionalController.listarTodos);
+router.get('/:id', ProfissionalController.buscarPorId);
+router.get('/:id/servicos', ProfissionalController.listarServicos);
+router.put('/:id', ProfissionalController.atualizar);
+router.delete('/:id', ProfissionalController.deletar);
 
 module.exports = router;

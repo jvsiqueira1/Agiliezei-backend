@@ -1,24 +1,45 @@
-const prisma = require("../config/prisma");
+const prisma = require('../config/prisma');
 
 class ClienteService {
   async criar(data) {
     const cliente = await this.buscarPorTelefone(data.telefone);
     if (cliente) {
-      throw new Error("Cliente já cadastrado");
+      throw new Error('Cliente já cadastrado');
     }
-    console.log("data criar cliente:", data);
+    console.log('data criar cliente:', data);
     return prisma.cliente.create({
       data,
     });
   }
 
-  async listarTodos() {
-    return prisma.cliente.findMany({
+  async listarTodos({ page = 1, limit = 10, search = '' }) {
+    const skip = (page - 1) * limit;
+    const take = limit;
+    const where = search
+      ? {
+          OR: [
+            { nome: { contains: search, mode: 'insensitive' } },
+            { telefone: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {};
+
+    const totalCount = await prisma.cliente.count({ where });
+
+    const data = await prisma.cliente.findMany({
+      where,
+      skip,
+      take,
       include: {
         enderecos: true,
         servicos: true,
       },
     });
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return { data, totalCount, totalPages };
   }
 
   async buscarPorId(id) {
@@ -42,38 +63,58 @@ class ClienteService {
   }
 
   async atualizar(id, data) {
-    const { enderecos, ...clienteData } = data;
+    const { servicos, enderecos, ...clienteData } = data;
 
-    if (enderecos) {
-      // Busca os endereços existentes do cliente
-      const enderecosAtuais = await prisma.endereco.findMany({
-        where: { clienteId: id },
+    try {
+      return await prisma.$transaction(async (tx) => {
+        if (servicos && Array.isArray(servicos)) {
+          await Promise.all(
+            servicos.map(async (servico) => {
+              const dadosServico = {
+                logradouro: servico.logradouro,
+                numero: servico.numero,
+                complemento: servico.complemento,
+                bairro: servico.bairro,
+                cidade: servico.cidade,
+                estado: servico.estado,
+                cep: servico.cep,
+                descricao: servico.descricao,
+                descricaoProblema: servico.descricaoProblema,
+                descricaoServicoPedreiro: servico.descricaoServicoPedreiro,
+                dataAgendada: servico.dataAgendada
+                  ? new Date(servico.dataAgendada)
+                  : null,
+              };
+
+              if (servico.id) {
+                await tx.servico.update({
+                  where: { id: servico.id },
+                  data: dadosServico,
+                });
+              } else {
+                await tx.servico.create({
+                  data: {
+                    ...dadosServico,
+                    clienteId: id,
+                  },
+                });
+              }
+            }),
+          );
+        }
+
+        const clienteAtualizado = await tx.cliente.update({
+          where: { id },
+          data: clienteData,
+          include: { servicos: true },
+        });
+
+        return clienteAtualizado;
       });
-
-      // Se existem endereços, atualiza o primeiro. Se não, cria um novo
-      if (enderecosAtuais.length > 0) {
-        await prisma.endereco.update({
-          where: { id: enderecosAtuais[0].id },
-          data: enderecos,
-        });
-      } else {
-        await prisma.endereco.create({
-          data: {
-            ...enderecos,
-            clienteId: id,
-          },
-        });
-      }
+    } catch (error) {
+      console.error('Erro ao atualizar cliente e serviços:', error);
+      throw error;
     }
-
-    // Atualiza os dados do cliente
-    return prisma.cliente.update({
-      where: { id },
-      data: clienteData,
-      include: {
-        enderecos: true,
-      },
-    });
   }
 
   async deletar(id) {

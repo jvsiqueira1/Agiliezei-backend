@@ -1,5 +1,5 @@
-const TipoServicoService = require("../services/TipoServicoService");
-const ApiOutputs = require("../helpers/ApiOutputs");
+const TipoServicoService = require('../services/TipoServicoService');
+const ApiOutputs = require('../helpers/ApiOutputs');
 
 class TipoServicoController {
   async criar(req, res) {
@@ -8,7 +8,7 @@ class TipoServicoController {
       return res
         .status(201)
         .json(
-          ApiOutputs.created(tipoServico, "Tipo de serviço criado com sucesso")
+          ApiOutputs.created(tipoServico, 'Tipo de serviço criado com sucesso'),
         );
     } catch (error) {
       console.error(error);
@@ -33,7 +33,7 @@ class TipoServicoController {
       if (!tipoServico) {
         return res
           .status(404)
-          .json(ApiOutputs.notFound("Tipo de serviço não encontrado"));
+          .json(ApiOutputs.notFound('Tipo de serviço não encontrado'));
       }
 
       return res.json(ApiOutputs.success(tipoServico));
@@ -49,8 +49,8 @@ class TipoServicoController {
       return res.json(
         ApiOutputs.success(
           tipoServico,
-          "Tipo de serviço atualizado com sucesso"
-        )
+          'Tipo de serviço atualizado com sucesso',
+        ),
       );
     } catch (error) {
       return res.status(400).json(ApiOutputs.badRequest(error.message));
@@ -63,7 +63,7 @@ class TipoServicoController {
       await TipoServicoService.deletar(id);
       return res
         .status(200)
-        .json(ApiOutputs.success("Cliente deletado com sucesso"));
+        .json(ApiOutputs.success('Cliente deletado com sucesso'));
     } catch (error) {
       return res.status(400).json(ApiOutputs.badRequest(error.message));
     }
