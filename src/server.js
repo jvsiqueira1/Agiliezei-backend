@@ -9,7 +9,7 @@ const app = express();
 
 // Middlewares
 app.use(cors({
-  origin: ['https://agilizei-front-end.vercel.app']
+  origin: ['https://agilizei-front-end.vercel.app', 'http://localhost:5173']
 }));
 app.use(express.json());
 
