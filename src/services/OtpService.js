@@ -39,9 +39,6 @@ class OtpService {
         },
       },
     });
-
-    console.log('Teste OTP:', otp);
-
     if (!otp) {
       throw new Error('Código inválido ou expirado');
     }
@@ -86,6 +83,33 @@ class OtpService {
         tipo: usuario.tipo,
       },
     };
+  }
+
+  async verificarOtpGenerico(telefone, codigo) {
+    const otp = await prisma.otp.findFirst({
+      where: {
+        telefone,
+        codigo,
+        expires: {
+          gt: new Date()
+        }
+      }
+    })
+
+    if(!otp) {
+      throw new Error('Código inválido ou expirado')
+    }
+
+    await prisma.otp.delete({
+      where: {
+        id: otp.id
+      }
+    })
+
+    return {
+      sucesso: true,
+      mensagem: 'Código verificado com sucesso'
+    }
   }
 }
 

@@ -92,6 +92,24 @@ class AuthController {
       res.status(400).json({ error: error.message });
     }
   }
+
+  async verificarTelefoneGenerico(req, res) {
+    try {
+      const { telefone, codigo } = req.body;
+  
+      if (!telefone || !codigo) {
+        return res
+          .status(400)
+          .json({ error: 'Telefone e código são obrigatórios' });
+      }
+  
+      const resultado = await OtpService.verificarOtpGenerico(telefone, codigo);
+      return res.status(200).json(resultado);
+    } catch (error) {
+      console.error('Erro ao verificar telefone:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
 }
 
 module.exports = new AuthController();
