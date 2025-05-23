@@ -111,7 +111,7 @@ class ServicoService {
     });
 
     for (const profissional of profissionais) {
-      const mensagem = `Olá, ${profissional.nome}!\nUm novo serviço de ${tipoServico.nome} foi criado. Acesse agilizei.net para mais detalhes`;
+      const mensagem = `Olá, ${profissional.nome}!\nUm novo serviço de "${tipoServico.nome}" foi criado. Acesse agilizei.net para mais detalhes`;
       try {
         await WhatsappClient.enviarMensagem(profissional.telefone, mensagem);
       } catch (error) {
@@ -220,10 +220,36 @@ class ServicoService {
   }
 
   async atualizar(id, data) {
-    return prisma.servico.update({
+    const servicoAtual = await prisma.servico.findUnique({ where: { id } });
+
+    const atualizado = await prisma.servico.update({
       where: { id },
       data,
     });
+  
+    if (data.status === "CANCELADO" && servicoAtual.status !== "CANCELADO") {
+      // Buscar todos os profissionais do tipoServicoId do serviço atualizado
+      const profissionais = await prisma.profissional.findMany({
+        where: { tipoServicoId: atualizado.tipoServicoId },
+      });
+  
+      const mensagem = `Olá! O serviço com a descrição "${atualizado.descricao || atualizado.descricaoServicoPedreiro || atualizado.descricaoProblema}" foi cancelado pelo cliente.`;
+  
+      for (const profissional of profissionais) {
+        if (profissional.telefone) {
+          try {
+            await WhatsappClient.enviarMensagem(profissional.telefone, mensagem);
+          } catch (err) {
+            console.error(
+              `Erro ao enviar mensagem para ${profissional.nome} (${profissional.telefone}):`,
+              err
+            );
+          }
+        }
+      }
+    }
+  
+    return atualizado;
   }
 
   async atualizarStatus(id, status) {
@@ -259,17 +285,17 @@ class ServicoService {
         where: { id: orcamentoId },
         include: { profissional: true },
       });
-
+  
       if (!orcamento) {
         throw new Error('Orçamento não encontrado');
       }
-
+  
       // Atualiza o status do orçamento escolhido para APROVADO
       await prisma.orcamento.update({
         where: { id: orcamentoId },
         data: { status: 'APROVADO' },
       });
-
+  
       // Atualiza os outros orçamentos para REJEITADO
       await prisma.orcamento.updateMany({
         where: {
@@ -278,7 +304,7 @@ class ServicoService {
         },
         data: { status: 'REJEITADO' },
       });
-
+  
       // Atualiza o serviço com o orçamento escolhido e o profissional
       const servicoAtualizado = await prisma.servico.update({
         where: { id: servicoId },
@@ -297,7 +323,18 @@ class ServicoService {
           },
         },
       });
-
+  
+      // Enviar mensagem para o profissional avisando que o serviço foi fechado
+      const mensagem = `Olá ${orcamento.profissional.nome}, o serviço com a descrição "${servicoAtualizado.descricao || servicoAtualizado.descricaoServicoPedreiro || servicoAtualizado.descricaoProblema}" foi fechado e você foi escolhido para executá-lo. Por favor, verifique os detalhes no portal Agilizei.`;
+  
+      try {
+        if (orcamento.profissional.telefone) {
+          await WhatsappClient.enviarMensagem(orcamento.profissional.telefone, mensagem);
+        }
+      } catch (err) {
+        console.error('Erro ao enviar mensagem para profissional:', err);
+      }
+  
       return servicoAtualizado;
     });
   }
@@ -340,9 +377,6 @@ class ServicoService {
 
       try {
         await WhatsappClient.enviarMensagem(telefoneProfissional, mensagem);
-        console.log(
-          `Mensagem enviada ao parceiro com sucesso. telefone: ${telefoneProfissional}, mensagem: ${mensagem}`,
-        );
       } catch (error) {
         console.error('Erro ao enviar mensagem para parceiro: ', error);
       }
