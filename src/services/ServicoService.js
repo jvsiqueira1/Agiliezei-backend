@@ -111,7 +111,7 @@ class ServicoService {
     });
 
     for (const profissional of profissionais) {
-      const mensagem = `Olá, ${profissional.nome}!\nUm novo serviço de "${tipoServico.nome}" foi criado. Acesse agilizei.net para mais detalhes`;
+      const mensagem = `Olá, ${profissional.nome}!\nUm novo serviço de "${tipoServico.nome}" foi criado.\nVerifique os detalhes em agilizei.net`; 
       try {
         await WhatsappClient.enviarMensagem(profissional.telefone, mensagem);
       } catch (error) {
