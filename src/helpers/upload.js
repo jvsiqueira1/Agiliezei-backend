@@ -3,17 +3,14 @@ const path = require('path');
 const fs = require('fs');
 
 // Defina o caminho para a pasta uploads
+const CAMINHO_PARA_SALVAR_UPLOADS = '/uploads';
 const uploadsDir = path.join(__dirname, '../uploads');
-
-// Verifique se a pasta uploads existe, se não, crie a pasta
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
 
 // Defina o destino do upload e o nome do arquivo
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadsDir); // Pasta onde os arquivos serão salvos
+    // Os arquivos serão salvos diretamente na raiz do disco, que é /uploads
+    cb(null, CAMINHO_PARA_SALVAR_UPLOADS);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname); // Extensão do arquivo
@@ -30,13 +27,14 @@ const fileFilter = (req, file, cb) => {
   if (extname && mimetype) {
     return cb(null, true);
   }
-  cb('Erro: Somente imagens são permitidas');
+  // Melhoria: É uma boa prática passar um objeto Error para o callback do Multer.
+  cb(new Error('Erro: Somente imagens (jpeg, jpg, png, gif) são permitidas!'));
 };
 
 const upload = multer({
-  storage,
+  storage, // Utiliza a configuração de armazenamento definida acima
   limits: { fileSize: 10 * 1024 * 1024 }, // Limite de tamanho de arquivo: 10MB
-  fileFilter,
+  fileFilter, // Utiliza o filtro de arquivo definido acima
 });
 
 module.exports = upload;
