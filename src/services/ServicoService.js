@@ -167,8 +167,13 @@ class ServicoService {
             enderecos: true,
           },
         },
+        profissional: true,
         tipoServico: true, // Inclui o tipo de serviço
-        orcamentos: true,
+        orcamentos: {
+          include: {
+            profissional: true,
+          }
+        },
         orcamentoEscolhido: true,
       },
     });
@@ -325,12 +330,17 @@ class ServicoService {
       });
   
       // Enviar mensagem para o profissional avisando que o serviço foi fechado
-      const mensagem = `Olá ${orcamento.profissional.nome}, o serviço com a descrição "${servicoAtualizado.descricao || servicoAtualizado.descricaoServicoPedreiro || servicoAtualizado.descricaoProblema}" foi fechado e você foi escolhido para executá-lo. Por favor, verifique os detalhes no portal Agilizei.`;
-  
+      const mensagem = `Olá ${orcamento.profissional.nome}, o serviço com a descrição "${servicoAtualizado.descricao || servicoAtualizado.descricaoServicoPedreiro || servicoAtualizado.descricaoProblema}" foi fechado e você foi escolhido para executá-lo. Por favor, verifique os detalhes em \nagilizei.net.`;
+      const mensagemCliente = `Olá ${servicoAtualizado.cliente.nome}, o serviço com a descrição "${servicoAtualizado.descricao || servicoAtualizado.descricaoServicoPedreiro || servicoAtualizado.descricaoProblema}" foi fechado com o profissional ${orcamento.profissional.nome}.`;
+
       try {
         if (orcamento.profissional.telefone) {
           await WhatsappClient.enviarMensagem(orcamento.profissional.telefone, mensagem);
         }
+        if (servicoAtualizado.cliente.telefone) {
+          await WhatsappClient.enviarMensagem(servicoAtualizado.cliente.telefone, mensagemCliente);
+        }
+
       } catch (err) {
         console.error('Erro ao enviar mensagem para profissional:', err);
       }

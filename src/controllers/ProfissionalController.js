@@ -80,6 +80,22 @@ class ProfissionalController {
     }
   }
 
+  async buscarPorTelefone(req, res) {
+    try {
+      const telefone = req.params.telefone;
+      const profissional = await ProfissionalService.buscarPorTelefone(telefone);
+      if (!profissional) {
+        return res
+          .status(404)
+          .json(ApiOutputs.notFound('Profissional não encontrado'));
+      }
+      console.log('Profissional encontrado:', profissional);
+      return res.json(ApiOutputs.success(profissional));
+    } catch (error) {
+      return res.status(500).json(ApiOutputs.error(error.message));
+    }
+  }
+
   async listarServicos(req, res) {
     try {
       const profissionalId = Number(req.params.id);

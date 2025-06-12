@@ -20,4 +20,17 @@ async function criarContato(req, res) {
   }
 }
 
-module.exports = { criarContato };
+async function listarContatos(req, res) {
+  try {
+    const contatos = await prisma.contatoOutrosServicos.findMany({
+      orderBy: { createdAt: 'desc' }, 
+    })
+
+    return res.status(200).json({ success: true, data: contatos })
+  } catch (err) {
+    console.error('Erro ao buscar contatos:', err)
+    return res.status(500).json({ error: 'Erro interno do servidor.' })
+  }
+}
+
+module.exports = { criarContato, listarContatos };

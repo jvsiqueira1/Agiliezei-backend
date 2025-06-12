@@ -97,6 +97,18 @@ class ProfissionalService {
     });
   }
 
+  async buscarPorTelefone(telefone) {
+    return prisma.profissional.findFirst({
+      where: {
+        telefone,
+        active: true,
+      },
+      include: {
+        tipoServico: true,
+      },
+    });
+  }
+
   async listarPorTipoServico(tipoServico) {
     return prisma.profissional.findMany({
       where: {
