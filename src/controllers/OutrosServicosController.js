@@ -33,4 +33,23 @@ async function listarContatos(req, res) {
   }
 }
 
+async function deletarContato(req, res) {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ error: 'ID do contato é obrigatório.' });
+  }
+
+  try {
+    const contato = await prisma.contatoOutrosServicos.delete({
+      where: { id: parseInt(id, 10) },
+    });
+
+    return res.status(200).json({ success: true, data: contato });
+  } catch (err) {
+    console.error('Erro ao deletar contato:', err);
+    return res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+}
+
 module.exports = { criarContato, listarContatos };
