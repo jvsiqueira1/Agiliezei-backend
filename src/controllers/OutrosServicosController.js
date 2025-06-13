@@ -52,4 +52,4 @@ async function deletarContato(req, res) {
   }
 }
 
-module.exports = { criarContato, listarContatos };
+module.exports = { criarContato, listarContatos, deletarContato };
