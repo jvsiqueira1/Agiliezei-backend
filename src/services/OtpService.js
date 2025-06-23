@@ -29,7 +29,6 @@ class OtpService {
   }
 
   async verificarOtp(telefone, codigo) {
-    console.log(`Telefone ${telefone}, codigo ${codigo}`);
     const otp = await prisma.otp.findFirst({
       where: {
         telefone,

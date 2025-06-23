@@ -13,15 +13,14 @@ const gerarCodigo = () =>
 class AuthController {
   async enviarOtp(req, res) {
     try {
-      const { telefone, tipo } = req.body;
-
-      if (!telefone || !tipo) {
+      const { telefone } = req.body;
+      if (!telefone) {
         return res
           .status(400)
-          .json({ error: 'Telefone e tipo são obrigatórios' });
+          .json({ error: 'Telefone é obrigatório' });
       }
 
-      await OtpService.enviarOtp(telefone, tipo);
+      await OtpService.enviarOtp(telefone); 
       res.json({ sucesso: true, message: 'Código OTP enviado com sucesso' });
     } catch (error) {
       console.error('Erro ao enviar OTP:', error);
@@ -41,50 +40,26 @@ class AuthController {
 
       const resultado = await OtpService.verificarOtp(telefone, codigo);
 
-      if (!resultado) {
-        return res.status(401).json({ error: 'Código inválido ou expirado' });
+      if (!resultado || !resultado.usuario || !resultado.usuario.tipos || resultado.usuario.tipos.length === 0) {
+        return res.status(401).json({ error: 'Código inválido, expirado ou usuário não encontrado' });
       }
 
-      const cliente = await prisma.cliente.findUnique({ where: { telefone } });
-      const parceiro = await prisma.profissional.findUnique({
-        where: { telefone },
-        select: {
-          id: true,
-          nome: true,
-          telefone: true,
-          tipoServicoId: true,
-        },
-      });
+      const { token, usuario } = resultado;
 
-      const usuario = cliente || parceiro;
+      const roles = usuario.tipos; 
 
-      if (!usuario) {
-        return res.status(404).json({ error: 'Usuário não encontrado' });
-      }
-
-      const role = cliente ? 'client' : 'partner';
-
-      const tokenPayload = {
-        id: usuario.id,
-        telefone: usuario.telefone,
-        role,
-      };
-
-      if (role === 'partner') {
-        tokenPayload.tipoServicoId = usuario.tipoServicoId;
-      }
-
-      const token = TokenService.gerarToken(tokenPayload);
+      const rolePrincipal = roles.includes('parceiro') ? 'partner' : 'client'; 
 
       return res.status(200).json({
         sucesso: true,
-        token,
+        token, 
         usuario: {
           id: usuario.id,
-          nome: usuario.nome,
           telefone: usuario.telefone,
-          role,
-          ...(role === 'partner' && { tipoServicoId: usuario.tipoServicoId }),
+          tipos: usuario.tipos,
+          role: rolePrincipal,
+          nome: usuario.nome,
+          ...(roles.includes('parceiro') && usuario.tipoServicoId && { tipoServicoId: usuario.tipoServicoId }),
         },
       });
     } catch (error) {
@@ -96,13 +71,13 @@ class AuthController {
   async verificarTelefoneGenerico(req, res) {
     try {
       const { telefone, codigo } = req.body;
-  
+
       if (!telefone || !codigo) {
         return res
           .status(400)
           .json({ error: 'Telefone e código são obrigatórios' });
       }
-  
+
       const resultado = await OtpService.verificarOtpGenerico(telefone, codigo);
       return res.status(200).json(resultado);
     } catch (error) {
