@@ -43,29 +43,35 @@ class OtpService {
       throw new Error('Código inválido ou expirado');
     }
 
-    // Buscar o usuário pelo telefone
-    let usuario = await prisma.cliente.findFirst({
+    const clientes = await prisma.cliente.findMany({
       where: { telefone },
     });
 
-    let tipo = 'cliente';
+    const profissionais = await prisma.profissional.findMany({
+      where: { telefone },
+    });
 
-    if (!usuario) {
-      usuario = await prisma.profissional.findFirst({
-        where: { telefone },
-      });
-      tipo = 'parceiro';
+    let tiposDePerfil = [];
+    let usuarioPrincipal = null; // Para o token inicial, podemos pegar o primeiro que aparecer
+
+    if (clientes.length > 0) {
+      tiposDePerfil.push('cliente');
+      if (!usuarioPrincipal) usuarioPrincipal = clientes[0]; // Define o primeiro cliente como principal, se não houver
+    }
+    if (profissionais.length > 0) {
+      tiposDePerfil.push('parceiro');
+      if (!usuarioPrincipal) usuarioPrincipal = profissionais[0]; // Define o primeiro profissional como principal, se não houver
     }
 
-    if (!usuario) {
-      throw new Error('Usuário não encontrado');
+    if (!usuarioPrincipal) {
+      throw new Error('Usuário não encontrado para este telefone');
     }
 
     // Gerar token JWT
     const token = tokenService.gerarToken({
-      id: usuario.id,
-      telefone: usuario.telefone,
-      tipo,
+      id: usuarioPrincipal.id,
+      telefone: usuarioPrincipal.telefone,
+      tipos: tiposDePerfil, 
     });
 
     // Deletar o código OTP após uso
@@ -78,9 +84,9 @@ class OtpService {
     return {
       token,
       usuario: {
-        id: usuario.id,
-        telefone: usuario.telefone,
-        tipo: usuario.tipo,
+        id: usuarioPrincipal.id,
+        telefone: usuarioPrincipal.telefone,
+        tipos: tiposDePerfil,
       },
     };
   }
