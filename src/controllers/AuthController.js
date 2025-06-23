@@ -58,6 +58,7 @@ class AuthController {
           telefone: usuario.telefone,
           tipos: usuario.tipos,
           role: rolePrincipal,
+          tipoServicoId: usuario.tipoServicoId || null,
           nome: usuario.nome,
           ...(roles.includes('parceiro') && usuario.tipoServicoId && { tipoServicoId: usuario.tipoServicoId }),
         },

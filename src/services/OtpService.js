@@ -48,30 +48,50 @@ class OtpService {
 
     const profissionais = await prisma.profissional.findMany({
       where: { telefone },
+      select: {
+        id: true,
+        telefone: true,
+        tipoServicoId: true, // Incluindo o tipo de serviço para o profissional
+      }
     });
 
     let tiposDePerfil = [];
     let usuarioPrincipal = null; // Para o token inicial, podemos pegar o primeiro que aparecer
+    let payloadDoToken = {}
 
     if (clientes.length > 0) {
       tiposDePerfil.push('cliente');
-      if (!usuarioPrincipal) usuarioPrincipal = clientes[0]; // Define o primeiro cliente como principal, se não houver
+      if (!usuarioPrincipal) {
+        usuarioPrincipal = clientes[0];
+        payloadDoToken = {
+          id: usuarioPrincipal.id,
+          telefone: usuarioPrincipal.telefone,
+          nome: usuarioPrincipal.nome,
+        }
+      }
     }
     if (profissionais.length > 0) {
       tiposDePerfil.push('parceiro');
-      if (!usuarioPrincipal) usuarioPrincipal = profissionais[0]; // Define o primeiro profissional como principal, se não houver
+      if (!usuarioPrincipal) {
+        usuarioPrincipal = profissionais[0];
+        payloadDoToken = {
+          id: usuarioPrincipal.id,
+          telefone: usuarioPrincipal.telefone,
+          tipoServicoId: usuarioPrincipal.tipoServicoId,
+        }
+      } else if (tiposDePerfil.includes('parceiro') && profissionais[0].tipoServicoId) {
+         payloadDoToken.tipoServicoId = profissionais[0].tipoServicoId;
+      }
     }
 
     if (!usuarioPrincipal) {
       throw new Error('Usuário não encontrado para este telefone');
     }
 
+    payloadDoToken.tipos = tiposDePerfil;
+
     // Gerar token JWT
-    const token = tokenService.gerarToken({
-      id: usuarioPrincipal.id,
-      telefone: usuarioPrincipal.telefone,
-      tipos: tiposDePerfil, 
-    });
+    const token = tokenService.gerarToken(payloadDoToken);
 
     // Deletar o código OTP após uso
     await prisma.otp.delete({
@@ -85,7 +105,9 @@ class OtpService {
       usuario: {
         id: usuarioPrincipal.id,
         telefone: usuarioPrincipal.telefone,
+        nome: usuarioPrincipal.nome || null,
         tipos: tiposDePerfil,
+        tipoServicoId: usuarioPrincipal.tipoServicoId || null,
       },
     };
   }
