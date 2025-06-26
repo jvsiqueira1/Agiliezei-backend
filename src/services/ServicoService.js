@@ -330,8 +330,8 @@ class ServicoService {
       });
   
       // Enviar mensagem para o profissional avisando que o serviço foi fechado
-      const mensagem = `Olá ${orcamento.profissional.nome}, o serviço com a descrição "${servicoAtualizado.descricao || servicoAtualizado.descricaoServicoPedreiro || servicoAtualizado.descricaoProblema}" foi fechado e você foi escolhido para executá-lo. Por favor, verifique os detalhes em \nagilizei.net.`;
-      const mensagemCliente = `Olá ${servicoAtualizado.cliente.nome}, o serviço com a descrição "${servicoAtualizado.descricao || servicoAtualizado.descricaoServicoPedreiro || servicoAtualizado.descricaoProblema}" foi fechado com o profissional ${orcamento.profissional.nome}.`;
+      const mensagem = `Olá ${orcamento.profissional.nome}, o serviço com a descrição "${servicoAtualizado.descricao || servicoAtualizado.descricaoServicoPedreiro || servicoAtualizado.descricaoProblema}" foi fechado e você foi escolhido para executá-lo.\nA equipe da Agilizei entrará em contato em até 24h.`;
+      const mensagemCliente = `Olá ${servicoAtualizado.cliente.nome}, o serviço com a descrição "${servicoAtualizado.descricao || servicoAtualizado.descricaoServicoPedreiro || servicoAtualizado.descricaoProblema}" foi fechado com o profissional ${orcamento.profissional.nome}.\nA equipe da Agilizei entrará em contato em até 24h.`;
 
       try {
         if (orcamento.profissional.telefone) {
