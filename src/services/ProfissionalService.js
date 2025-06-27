@@ -1,5 +1,28 @@
 const prisma = require('../config/prisma');
 
+function parseDataNascimento(dataNascimento) {
+  if (!dataNascimento) return null;
+
+  // Se já for um objeto Date válido, retorna direto
+  if (dataNascimento instanceof Date && !isNaN(dataNascimento)) {
+    return dataNascimento;
+  }
+
+  // Se vier no formato DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataNascimento)) {
+    const [dia, mes, ano] = dataNascimento.split('/');
+    const date = new Date(`${ano}-${mes}-${dia}T00:00:00`);
+    if (!isNaN(date)) return date;
+  }
+
+  // Tenta criar a partir do formato ISO ou outros aceitos pelo JS
+  const date = new Date(dataNascimento);
+  if (!isNaN(date)) return date;
+
+  // Se não for válido, retorna null
+  return null;
+}
+
 class ProfissionalService {
   async criar(data) {
     const documento = data.cpfCnpj?.replace(/\D/g, '');
@@ -25,11 +48,16 @@ class ProfissionalService {
 
     console.log('foto_documento (nome do arquivo): ', fotoDocumento);
 
+    const dataNascimento = parseDataNascimento(data.dataNascimento);
+    if (!dataNascimento) {
+      throw new Error('Data de nascimento inválida. Use o formato DD/MM/YYYY ou YYYY-MM-DD.');
+    }
+
     const profissionalData = {
       nome: data.nome,
       email: data.email,
       telefone: data.telefone,
-      dataNascimento: new Date(data.dataNascimento),
+      dataNascimento: dataNascimento,
       endereco: data.endereco,
       tipoServicoId: tipoServicoId,
       active: false,
