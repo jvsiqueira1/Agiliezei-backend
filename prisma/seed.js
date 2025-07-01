@@ -3,19 +3,18 @@ const prisma = new PrismaClient();
 const bcrypt = require('bcrypt');
 
 async function main() {
-    const adminEmail = 'admin@agilizei.com';
-    const adminPlainPassword = 'senhaSegura123';
+    const adminEmail = process.env.SEED_EMAIL
+    const adminPlainPassword = process.env.SEED_PASS
 
-    const hashedPassword = await bcrypt.hash(adminPlainPassword, 10);
+    const hashedPassword = bcrypt.hash(adminPlainPassword, 10);
 
     await prisma.admin.upsert({
         where: { email: adminEmail },
-        update: {}, // não atualiza se já existir
+        update: {},
         create: {
           nome: 'Administrador',
           email: adminEmail,
           senha: hashedPassword,
-          // Adicione outros campos obrigatórios do seu modelo Admin, se houver
         },
       });
     
