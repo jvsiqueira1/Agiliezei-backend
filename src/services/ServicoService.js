@@ -400,6 +400,31 @@ class ServicoService {
       where: { id },
     });
   }
+
+  async listarPorClientePaginado(clienteId, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const where = { clienteId };
+    const totalCount = await prisma.servico.count({ where });
+    const servicos = await prisma.servico.findMany({
+      where,
+      include: {
+        orcamentos: {
+          include: {
+            profissional: {
+              select: { nome: true },
+            },
+          },
+        },
+        profissional: true,
+        tipoServico: true,
+      },
+      skip,
+      take: Number(limit),
+      orderBy: { createdAt: 'desc' },
+    });
+    const totalPages = Math.ceil(totalCount / limit);
+    return { servicos, totalCount, totalPages };
+  }
 }
 
 module.exports = new ServicoService();

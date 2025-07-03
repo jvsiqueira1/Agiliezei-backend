@@ -61,10 +61,15 @@ class ServicoController {
   async listarPorCliente(req, res) {
     try {
       const clienteId = Number(req.params.id);
-      const servicos = await ServicoService.listarPorCliente(clienteId);
-
-      const servicosFiltrados = servicos.map(filtrarCamposPorTipoServico);
-      res.json(servicosFiltrados);
+      const { page = 1, limit = 10 } = req.query;
+      const result = await ServicoService.listarPorClientePaginado(clienteId, Number(page), Number(limit));
+      // Filtrar os campos de cada serviço
+      const servicosFiltrados = result.servicos.map(filtrarCamposPorTipoServico);
+      res.json({
+        servicos: servicosFiltrados,
+        totalCount: result.totalCount,
+        totalPages: result.totalPages,
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
