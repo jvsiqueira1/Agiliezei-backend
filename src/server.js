@@ -11,7 +11,8 @@ const PASTA_FOTOS_PERSISTENTES = '/uploads'
 
 // Middlewares
 app.use(cors({
-  origin: ['https://agilizei-front-end.vercel.app', 'http://localhost:5173', 'https://www.agilizei.net', 'https://agilizei-front-end-nine.vercel.app']
+  origin: ['https://agilizei-front-end.vercel.app', 'http://localhost:5173', 'https://www.agilizei.net', 'https://agilizei-front-end-nine.vercel.app'],
+  credentials: true,
 }));
 app.use(express.json());
 
