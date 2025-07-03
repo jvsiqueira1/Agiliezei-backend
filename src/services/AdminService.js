@@ -1,10 +1,14 @@
 const prisma = require('../config/prisma');
+const bcrypt = require('bcrypt');
 
 class AdminService {
   async criar(data) {
-    // Em produção, deveria hash a senha antes de salvar
+    const hashedPassword = await bcrypt.hash(data.senha, 10);
     return prisma.admin.create({
-      data,
+      data: {
+        ...data,
+        senha: hashedPassword,
+      },
     });
   }
 
@@ -16,7 +20,6 @@ class AdminService {
         email: true,
         createdAt: true,
         updatedAt: true,
-        // Não enviamos a senha
       },
     });
   }
@@ -30,7 +33,6 @@ class AdminService {
         email: true,
         createdAt: true,
         updatedAt: true,
-        // Não enviamos a senha
       },
     });
   }
@@ -42,7 +44,6 @@ class AdminService {
   }
 
   async atualizar(id, data) {
-    // Em produção, deveria hash a senha antes de salvar
     return prisma.admin.update({
       where: { id },
       data,
@@ -52,7 +53,6 @@ class AdminService {
         email: true,
         createdAt: true,
         updatedAt: true,
-        // Não enviamos a senha
       },
     });
   }
