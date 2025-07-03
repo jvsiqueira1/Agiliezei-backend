@@ -14,7 +14,6 @@ class AdminController {
   }
 
   async listarTodos(req, res) {
-    console.log('teste');
     try {
       const admins = await AdminService.listarTodos();
       res.json(admins);
@@ -85,7 +84,7 @@ class AdminController {
       const token = TokenService.gerarToken({
         id: admin.id,
         email: admin.email,
-        role: 'admin',
+        tipo: 'admin',
       });
 
       return res.status(200).json({
@@ -94,7 +93,7 @@ class AdminController {
         usuario: {
           id: admin.id,
           email: admin.email,
-          role: 'admin',
+          tipo: 'admin',
         },
       });
     } catch (error) {
