@@ -212,16 +212,27 @@ class ServicoService {
     });
   }
 
-  async listarPorTipoServico(tipoServicoId) {
-    return prisma.servico.findMany({
-      where: {
-        tipoServicoId: tipoServicoId,
-      },
+  async listarPorTipoServico(tipoServicoId, page = 1, limit = 10, statusList = []) {
+    const skip = (page - 1) * limit;
+    const where = {
+      tipoServicoId,
+      ...(Array.isArray(statusList) && statusList.length > 0 ? { status: { in: statusList } } : {}),
+    };
+    const totalCount = await prisma.servico.count({ where });
+    const servicos = await prisma.servico.findMany({
+      where,
+      skip,
+      take: limit,
       include: {
         cliente: true,
         orcamentos: true,
       },
     });
+    return {
+      servicos,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+    };
   }
 
   async atualizar(id, data) {
@@ -401,9 +412,12 @@ class ServicoService {
     });
   }
 
-  async listarPorClientePaginado(clienteId, page = 1, limit = 10) {
+  async listarPorClientePaginado(clienteId, page = 1, limit = 10, statusList = []) {
     const skip = (page - 1) * limit;
-    const where = { clienteId };
+    const where = {
+      clienteId,
+      ...(Array.isArray(statusList) && statusList.length > 0 ? { status: { in: statusList } } : {}),
+    };
     const totalCount = await prisma.servico.count({ where });
     const servicos = await prisma.servico.findMany({
       where,

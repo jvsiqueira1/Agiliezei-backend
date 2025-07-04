@@ -61,8 +61,16 @@ class ServicoController {
   async listarPorCliente(req, res) {
     try {
       const clienteId = Number(req.params.id);
-      const { page = 1, limit = 10 } = req.query;
-      const result = await ServicoService.listarPorClientePaginado(clienteId, Number(page), Number(limit));
+      const { page = 1, limit = 10, statusList } = req.query;
+      let statusArray = [];
+      if (statusList) {
+        if (Array.isArray(statusList)) {
+          statusArray = statusList;
+        } else if (typeof statusList === 'string') {
+          statusArray = statusList.split(',');
+        }
+      }
+      const result = await ServicoService.listarPorClientePaginado(clienteId, Number(page), Number(limit), statusArray);
       // Filtrar os campos de cada serviço
       const servicosFiltrados = result.servicos.map(filtrarCamposPorTipoServico);
       res.json({
@@ -153,6 +161,15 @@ class ServicoController {
   async listarPorTipoServico(req, res) {
     try {
       const tipoServicoId = Number(req.params.tipoServicoId);
+      const { page = 1, limit = 10, statusList } = req.query;
+      let statusArray = [];
+      if (statusList) {
+        if (Array.isArray(statusList)) {
+          statusArray = statusList;
+        } else if (typeof statusList === 'string') {
+          statusArray = statusList.split(',');
+        }
+      }
       const token = req.headers.authorization?.split(' ')[1];
 
       if (!token) {
@@ -170,8 +187,12 @@ class ServicoController {
           .json({ error: 'Profissional inativo ou não encontrado' });
       }
 
-      const servicos = await ServicoService.listarPorTipoServico(tipoServicoId);
-      res.json(servicos);
+      const result = await ServicoService.listarPorTipoServico(tipoServicoId, Number(page), Number(limit), statusArray);
+      res.json({
+        servicos: result.servicos,
+        totalCount: result.totalCount,
+        totalPages: result.totalPages,
+      });
     } catch (error) {
       console.error('Erro ao listar por tipo de serviço:', error);
       res.status(500).json({ error: error.message });
